@@ -76,7 +76,7 @@
 
     .tab-row {
         display: grid;
-        grid-template-columns: repeat(5, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         background: transparent;
     }
@@ -161,6 +161,21 @@
         align-items: center;
         justify-content: space-between;
     }
+    .count-row {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin: -2px 0 14px;
+    }
+    .count-chip {
+        background: #f1f5f9;
+        color: #334155;
+        border: 1px solid #dbe3ee;
+        border-radius: 999px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 700;
+    }
 
     .muted {
         color: #64748b;
@@ -204,6 +219,9 @@
         padding: 5px 10px;
         font-size: 11px;
         font-weight: 800;
+    }
+    .badge-sold {
+        background: rgba(153, 27, 27, 0.92);
     }
 
     .price {
@@ -362,6 +380,7 @@
             <a class="tab {% if selected_listing_type == 'lease' %}active{% endif %}" href="{% url 'property-list' %}?listing_type=lease">Lease</a>
             <a class="tab {% if selected_type == 'commercial' %}active{% endif %}" href="{% url 'property-list' %}?type=commercial{% if selected_listing_type %}&listing_type={{ selected_listing_type }}{% endif %}">Commercial</a>
             <a class="tab {% if selected_type == 'land' %}active{% endif %}" href="{% url 'property-list' %}?type=land{% if selected_listing_type %}&listing_type={{ selected_listing_type }}{% endif %}">Plots/Land</a>
+            <a class="tab {% if selected_status == 'sold' %}active{% endif %}" href="{% url 'property-list' %}?status=sold{% if selected_listing_type %}&listing_type={{ selected_listing_type }}{% endif %}">Sold</a>
         </div>
 
         <form method="get" class="search-row">
@@ -393,9 +412,22 @@
 
     <div class="top-row">
         <div class="muted">Showing {{ total_properties }} properties</div>
-        {% if request.user.is_staff %}
-        <a href="{% url 'property-add' %}" class="btn btn-primary">Add Property</a>
-        {% endif %}
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            {% if selected_status == "sold" %}
+            <a href="{% url 'property-list' %}" class="btn btn-outline">Back To All</a>
+            {% else %}
+            <a href="{% url 'property-list' %}?status=sold" class="btn btn-outline">Sold Properties</a>
+            {% endif %}
+            {% if request.user.is_staff %}
+            <a href="{% url 'property-add' %}" class="btn btn-primary">Add Property</a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="count-row">
+        <span class="count-chip">Buy: {{ buy_count }}</span>
+        <span class="count-chip">Rent: {{ rent_count }}</span>
+        <span class="count-chip">Lease: {{ lease_count }}</span>
+        <span class="count-chip">Sold: {{ sold_count }}</span>
     </div>
 
     <div class="grid">
@@ -407,7 +439,7 @@
                 {% else %}
                 <img src="https://via.placeholder.com/900x500?text=Property" alt="{{ p.title }}">
                 {% endif %}
-                <span class="badge">{{ p.listing_type|title }} | {{ p.status|title }}</span>
+                <span class="badge {% if p.status == 'sold' %}badge-sold{% endif %}">{{ p.listing_type|title }} | {{ p.status|title }}</span>
                 <span class="price">INR {{ p.price }}</span>
             </div>
 
@@ -423,10 +455,19 @@
                     <div class="meta-item"><b>{{ p.bathrooms|default:"-" }}</b>Bathrooms</div>
                     <div class="meta-item"><b>{{ p.area|default:"-" }}</b>Sqft</div>
                 </div>
+                {% if p.status == "sold" and p.sale_info %}
+                <div class="meta-item" style="margin-bottom:12px;text-align:left;">
+                    <b>Sold To:</b> {{ p.sale_info.buyer_name }}<br>
+                    <b>Sold Price:</b> INR {{ p.sale_info.sold_price }}<br>
+                    {% if p.sale_info.sold_on %}<b>Sold On:</b> {{ p.sale_info.sold_on }}{% endif %}
+                </div>
+                {% endif %}
 
                 <div class="actions">
                     <a href="{% url 'property-detail' p.id %}" class="btn btn-outline">View</a>
-                    {% if request.user.is_staff %}
+                    {% if p.status == "sold" %}
+                    <span class="btn btn-outline btn-disabled">Sold</span>
+                    {% elif request.user.is_staff %}
                     <a href="{% url 'property-enquiry' p.id %}" class="btn btn-primary">Request</a>
                     {% elif p.id in requested_property_ids %}
                     <span class="btn btn-outline btn-disabled">Requested</span>

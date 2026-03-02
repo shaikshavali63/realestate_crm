@@ -58,6 +58,31 @@ class PropertyImage(models.Model):
         return f"Gallery image for {self.property.title}"
 
 
+class PropertySale(models.Model):
+    buyer_lead = models.ForeignKey(
+        "leads.Lead",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="property_sales",
+    )
+    property = models.OneToOneField(
+        Property,
+        on_delete=models.CASCADE,
+        related_name="sale_info",
+    )
+    buyer_name = models.CharField(max_length=200)
+    buyer_phone = models.CharField(max_length=20, blank=True)
+    buyer_email = models.EmailField(blank=True)
+    sold_price = models.DecimalField(max_digits=12, decimal_places=2)
+    sold_on = models.DateField(null=True, blank=True)
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Sale: {self.property.title} -> {self.buyer_name}"
+
+
 @receiver(pre_save, sender=Property)
 def capture_previous_assignee(sender, instance, **kwargs):
     if not instance.pk:

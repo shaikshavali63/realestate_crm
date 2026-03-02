@@ -4,7 +4,7 @@ from django.http import HttpResponseForbidden
 from django.contrib.auth.models import User
 from django.db.models import Q
 
-from .models import Property, PropertyImage
+from .models import Property, PropertyImage, PropertySale
 from accounts.models import Profile
 from leads.models import Lead
 
@@ -62,6 +62,7 @@ def property_list(request):
     buy_count = base_properties.filter(listing_type="buy").count()
     rent_count = base_properties.filter(listing_type="rent").count()
     lease_count = base_properties.filter(listing_type="lease").count()
+    sold_count = base_properties.filter(status="sold").count()
     return render(request,
                   'properties/property_list.html',
                   {
@@ -81,6 +82,7 @@ def property_list(request):
                       'buy_count': buy_count,
                       'rent_count': rent_count,
                       'lease_count': lease_count,
+                      'sold_count': sold_count,
                   })
 
 
@@ -152,6 +154,8 @@ def property_enquiry(request, pk):
     property_obj = get_object_or_404(Property, pk=pk)
 
     if request.user.is_staff:
+        return redirect("property-detail", pk=pk)
+    if property_obj.status == "sold":
         return redirect("property-detail", pk=pk)
 
     profile, _ = Profile.objects.get_or_create(user=request.user)
@@ -228,7 +232,7 @@ def property_enquiry(request, pk):
     return redirect("property-detail", pk=pk)
 
 @login_required
-def property_edit(request, pk): 
+def property_edit(request, pk):
     prop = get_object_or_404(Property, pk=pk)
 
     if not request.user.is_staff:
@@ -258,12 +262,50 @@ def property_edit(request, pk):
 
         prop.save()
 
+        if prop.status == "sold":
+            selected_lead_id = (request.POST.get("buyer_lead_id") or "").strip()
+            selected_lead = None
+            if selected_lead_id:
+                selected_lead = Lead.objects.filter(id=selected_lead_id, property=prop).first()
+
+            buyer_name = (request.POST.get("buyer_name") or "").strip()
+            buyer_phone = (request.POST.get("buyer_phone") or "").strip()
+            buyer_email = (request.POST.get("buyer_email") or "").strip()
+
+            if selected_lead:
+                buyer_name = buyer_name or (selected_lead.name or "")
+                buyer_phone = buyer_phone or (selected_lead.phone or "")
+                buyer_email = buyer_email or (selected_lead.email or "")
+
+            sold_price = request.POST.get("sold_price")
+            if buyer_name and sold_price:
+                sale_obj = PropertySale.objects.filter(property=prop).first()
+                if not sale_obj:
+                    sale_obj = PropertySale(property=prop)
+                sale_obj.buyer_lead = selected_lead
+                sale_obj.buyer_name = buyer_name
+                sale_obj.buyer_phone = buyer_phone
+                sale_obj.buyer_email = buyer_email
+                sale_obj.sold_price = sold_price
+                sale_obj.sold_on = request.POST.get("sold_on") or None
+                sale_obj.notes = (request.POST.get("sale_notes") or "").strip()
+                sale_obj.save()
+
         for f in request.FILES.getlist("gallery"):
             PropertyImage.objects.create(property=prop, image=f)
 
         return redirect("property-detail", pk=pk)
 
-    return render(request, "properties/property_edit.html", {"property": prop})
+    interested_leads = Lead.objects.filter(property=prop).order_by("-created_at")
+    return render(
+        request,
+        "properties/property_edit.html",
+        {
+            "property": prop,
+            "sale_info": getattr(prop, "sale_info", None),
+            "interested_leads": interested_leads,
+        },
+    )
 
 @login_required
 def property_delete(request, pk):
@@ -274,7 +316,3 @@ def property_delete(request, pk):
 
     prop.delete()
     return redirect("property-list")
-
-
-
-

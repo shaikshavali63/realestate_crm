@@ -141,7 +141,7 @@ def customer_register(request):
             assigned_to=None
         )
 
-        login(request, user)
+        login(request, user, backend='django.contrib.auth.backends.ModelBackend')
         return redirect("property-list")
 
     return render(request, "accounts/customer_register.html")

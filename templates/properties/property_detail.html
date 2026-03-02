@@ -214,21 +214,30 @@
     <div class="info-card">
         <div class="price">INR {{ property.price }}</div>
 
-        <div class="stat-grid">
-            <div class="stat">Type: {{ property.property_type|title }}</div>
-            <div class="stat">Listing: {{ property.listing_type|title }}</div>
-            <div class="stat">Status: {{ property.status|title }}</div>
-            <div class="stat">Bedrooms: {{ property.bedrooms|default:"-" }}</div>
-            <div class="stat">Bathrooms: {{ property.bathrooms|default:"-" }}</div>
-            <div class="stat">Area: {{ property.area|default:"-" }} sqft</div>
-            {% if request.user.is_staff %}
-            <div class="stat">Agent: {{ property.assigned_to.username|default:"Unassigned" }}</div>
-            {% endif %}
-        </div>
+            <div class="stat-grid">
+                <div class="stat">Type: {{ property.property_type|title }}</div>
+                <div class="stat">Listing: {{ property.listing_type|title }}</div>
+                <div class="stat">Status: {{ property.status|title }}</div>
+                <div class="stat">Bedrooms: {{ property.bedrooms|default:"-" }}</div>
+                <div class="stat">Bathrooms: {{ property.bathrooms|default:"-" }}</div>
+                <div class="stat">Area: {{ property.area|default:"-" }} sqft</div>
+                {% if property.status == "sold" and property.sale_info %}
+                <div class="stat">Buyer: {{ property.sale_info.buyer_name }}</div>
+                <div class="stat">Sold Price: INR {{ property.sale_info.sold_price }}</div>
+                {% if property.sale_info.sold_on %}
+                <div class="stat">Sold Date: {{ property.sale_info.sold_on }}</div>
+                {% endif %}
+                {% endif %}
+                {% if request.user.is_staff %}
+                <div class="stat">Agent: {{ property.assigned_to.username|default:"Unassigned" }}</div>
+                {% endif %}
+            </div>
 
-        <div class="cta">
+            <div class="cta">
             {% if not request.user.is_staff %}
-                {% if has_requested %}
+                {% if property.status == "sold" %}
+                <span class="btn btn-outline btn-disabled">Sold</span>
+                {% elif has_requested %}
                 <span class="btn btn-outline btn-disabled">Requested</span>
                 {% else %}
                 <a href="{% url 'property-enquiry' property.id %}" class="btn btn-primary">Request Property</a>

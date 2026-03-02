@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Property, PropertyImage
+from .models import Property, PropertyImage, PropertySale
 
 
 class PropertyImageInline(admin.TabularInline):
@@ -16,4 +16,9 @@ class PropertyAdmin(admin.ModelAdmin):
 @admin.register(PropertyImage)
 class PropertyImageAdmin(admin.ModelAdmin):
     list_display = ("property", "image", "created_at")
+
+
+@admin.register(PropertySale)
+class PropertySaleAdmin(admin.ModelAdmin):
+    list_display = ("property", "buyer_name", "buyer_lead", "sold_price", "sold_on")
 

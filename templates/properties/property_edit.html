@@ -109,6 +109,19 @@
         color: #0f172a;
         border: 1px solid #cfd8e3;
     }
+    .sale-box {
+        margin-top: 14px;
+        border: 1px dashed #cfd8e3;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 14px;
+    }
+    .sale-title {
+        margin: 0 0 10px;
+        color: #0f172a;
+        font-size: 16px;
+        font-weight: 800;
+    }
 
     @media (max-width: 760px) {
         .grid {
@@ -155,7 +168,7 @@
 
                 <div class="field">
                     <label>Status</label>
-                    <select name="status">
+                    <select id="statusField" name="status">
                         <option value="available" {% if property.status == "available" %}selected{% endif %}>Available</option>
                         <option value="sold" {% if property.status == "sold" %}selected{% endif %}>Sold</option>
                         <option value="hold" {% if property.status == "hold" %}selected{% endif %}>On Hold</option>
@@ -203,6 +216,53 @@
                 </div>
             </div>
 
+            <div id="saleBox" class="sale-box" style="{% if property.status != 'sold' %}display:none;{% endif %}">
+                <h4 class="sale-title">Sold Property Details</h4>
+                <div class="grid">
+                    <div class="field full">
+                        <label>Select Buyer From Interested Leads (Optional)</label>
+                        <select id="buyerLeadSelect" name="buyer_lead_id">
+                            <option value="">-- Manual Entry / Not From Leads --</option>
+                            {% for lead in interested_leads %}
+                            <option
+                                value="{{ lead.id }}"
+                                {% if sale_info.buyer_lead_id == lead.id %}selected{% endif %}
+                                data-name="{{ lead.name }}"
+                                data-phone="{{ lead.phone|default:'' }}"
+                                data-email="{{ lead.email|default:'' }}"
+                            >
+                                {{ lead.name }}{% if lead.phone %} - {{ lead.phone }}{% endif %}{% if lead.email %} - {{ lead.email }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label>Buyer Name</label>
+                        <input id="buyerName" type="text" name="buyer_name" value="{{ sale_info.buyer_name|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Sold Price</label>
+                        <input type="number" name="sold_price" min="0" value="{{ sale_info.sold_price|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Buyer Phone</label>
+                        <input id="buyerPhone" type="text" name="buyer_phone" value="{{ sale_info.buyer_phone|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Buyer Email</label>
+                        <input id="buyerEmail" type="email" name="buyer_email" value="{{ sale_info.buyer_email|default:'' }}">
+                    </div>
+                    <div class="field">
+                        <label>Sold Date</label>
+                        <input type="date" name="sold_on" value="{{ sale_info.sold_on|date:'Y-m-d' }}">
+                    </div>
+                    <div class="field full">
+                        <label>Sale Notes</label>
+                        <input type="text" name="sale_notes" value="{{ sale_info.notes|default:'' }}" placeholder="Any additional sale information">
+                    </div>
+                </div>
+            </div>
+
             <div class="actions">
                 <button class="btn btn-save" type="submit">Update Property</button>
                 <a class="btn btn-cancel" href="{% url 'property-detail' property.id %}">Cancel</a>
@@ -210,5 +270,31 @@
         </form>
     </div>
 </div>
+<script>
+    (function () {
+        const statusField = document.getElementById("statusField");
+        const saleBox = document.getElementById("saleBox");
+        const buyerLeadSelect = document.getElementById("buyerLeadSelect");
+        const buyerName = document.getElementById("buyerName");
+        const buyerPhone = document.getElementById("buyerPhone");
+        const buyerEmail = document.getElementById("buyerEmail");
+        if (!statusField || !saleBox) return;
+        const toggleSaleBox = () => {
+            saleBox.style.display = statusField.value === "sold" ? "block" : "none";
+        };
+        const populateBuyerFromLead = () => {
+            if (!buyerLeadSelect) return;
+            const option = buyerLeadSelect.options[buyerLeadSelect.selectedIndex];
+            if (!option || !option.value) return;
+            if (buyerName && !buyerName.value) buyerName.value = option.dataset.name || "";
+            if (buyerPhone && !buyerPhone.value) buyerPhone.value = option.dataset.phone || "";
+            if (buyerEmail && !buyerEmail.value) buyerEmail.value = option.dataset.email || "";
+        };
+        statusField.addEventListener("change", toggleSaleBox);
+        if (buyerLeadSelect) buyerLeadSelect.addEventListener("change", populateBuyerFromLead);
+        toggleSaleBox();
+        populateBuyerFromLead();
+    })();
+</script>
 {% endblock %}
 

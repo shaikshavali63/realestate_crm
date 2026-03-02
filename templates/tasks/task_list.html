@@ -4,78 +4,166 @@
 {% block content %}
 
 <style>
-    .page-card {
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    .task-shell {
+        background: linear-gradient(180deg, #f8fbff 0%, #f2f7fd 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 16px;
     }
-
+    .task-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .task-title {
+        margin: 0;
+        font-size: 30px;
+        color: #0f172a;
+    }
+    .task-subtitle {
+        margin: 6px 0 0;
+        color: #64748b;
+        font-size: 14px;
+    }
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(150px, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+    }
+    .stat-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 10px 12px;
+    }
+    .stat-label {
+        color: #64748b;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: .04em;
+    }
+    .stat-value {
+        margin-top: 4px;
+        font-size: 24px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+    .table-card {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+    }
+    .table-wrap {
+        overflow-x: auto;
+    }
     table {
         width: 100%;
+        min-width: 1100px;
         border-collapse: collapse;
     }
-
     th, td {
-        padding: 12px;
-        border-bottom: 1px solid #e5e7eb;
+        padding: 13px 14px;
+        border-bottom: 1px solid #f1f5f9;
         text-align: left;
         vertical-align: middle;
     }
-
     th {
-        background: #f1f5f9;
-        font-size: 13px;
+        background: #f8fafc;
+        color: #475569;
+        font-size: 12px;
         text-transform: uppercase;
-        color: #555;
+        letter-spacing: .04em;
     }
-
-    tr:hover {
-        background: #f9fafb;
+    tbody tr:hover td {
+        background: #f8fbff;
     }
-
-    .status-done {
-        color: green;
-        font-weight: 600;
-    }
-
-    .status-pending {
-        color: orange;
-        font-weight: 600;
-    }
-
     .muted {
-        color: #999;
+        color: #94a3b8;
     }
-
     .add-btn {
-        padding: 8px 14px;
+        display: inline-block;
+        padding: 9px 14px;
         background: #2563eb;
-        color: white;
-        border-radius: 6px;
+        color: #fff;
+        border-radius: 10px;
         text-decoration: none;
+        font-weight: 700;
     }
-
+    .badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid transparent;
+    }
+    .status-pending { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+    .status-done { background: #ecfdf5; color: #047857; border-color: #a7f3d0; }
+    .status-in_progress { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .priority-low { background: #f8fafc; color: #475569; border-color: #cbd5e1; }
+    .priority-medium { background: #fffbeb; color: #a16207; border-color: #fde68a; }
+    .priority-high { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
     .mini-btn {
+        display: inline-block;
         padding: 6px 10px;
-        border-radius: 6px;
+        border-radius: 8px;
         text-decoration: none;
         font-size: 12px;
-        border: 1px solid #e5e7eb;
+        border: 1px solid #e2e8f0;
         background: #fff;
         color: #111827;
         margin-right: 6px;
         cursor: pointer;
+        font-weight: 600;
+    }
+    .mini-btn:hover {
+        background: #f8fafc;
+    }
+    @media (max-width: 900px) {
+        .stats-grid {
+            grid-template-columns: 1fr;
+        }
+        .task-title {
+            font-size: 24px;
+        }
+        .task-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
     }
 </style>
 
-<!-- PAGE HEADER -->
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
-    <h2>Tasks</h2>
-    <a href="{% url 'task-add' %}" class="add-btn">+ Add Task</a>
-</div>
+<div class="task-shell">
+    <div class="task-header">
+        <div>
+            <h2 class="task-title">Task List</h2>
+            <p class="task-subtitle">Manage lead follow-ups, meetings, site visits, and completion status.</p>
+        </div>
+        <a href="{% url 'task-add' %}" class="add-btn">+ Add Task</a>
+    </div>
 
-<div class="page-card">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label">Total Tasks</div>
+            <div class="stat-value">{{ tasks|length }}</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">View</div>
+            <div class="stat-value" style="font-size:18px;color:#1d4ed8;">Operational</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label">Tracking</div>
+            <div class="stat-value" style="font-size:18px;">Live</div>
+        </div>
+    </div>
+
+<div class="table-card">
+    <div class="table-wrap">
     <table>
         <thead>
             <tr>
@@ -97,9 +185,13 @@
                 <td>{{ task.lead.name }}</td>
                 <td>{{ task.property.title|default:"-" }}</td>
                 <td>{{ task.task_type|title }}</td>
-                <td>{{ task.priority|title }}</td>
+                <td>
+                    <span class="badge priority-{{ task.priority }}">{{ task.priority|title }}</span>
+                </td>
                 <td>{{ task.due_date|date:"Y-m-d H:i" }}</td>
-                <td>{{ task.status|title }}</td>
+                <td>
+                    <span class="badge status-{{ task.status }}">{{ task.status|title }}</span>
+                </td>
                 <td>
                     {% if task.assigned_to %}
                         {{ task.assigned_to.username }}
@@ -118,11 +210,13 @@
             </tr>
         {% empty %}
             <tr>
-                <td colspan="9">No tasks found</td>
+                <td colspan="9" class="muted" style="text-align:center;padding:24px;">No tasks found.</td>
             </tr>
         {% endfor %}
         </tbody>
     </table>
+    </div>
+</div>
 </div>
 
 {% endblock %}
