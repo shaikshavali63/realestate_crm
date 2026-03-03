@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: realestate-deployment
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: realestate-web
+  template:
+    metadata:
+      labels:
+        app: realestate-web
+    spec:
+      containers:
+      - name: realestate-web
+        image: realestate_crm-image:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8000
