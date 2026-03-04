@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: realestate-ingress
+spec:
+  ingressClassName: nginx
+  rules:
+  - http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            # CHANGE THIS TO MATCH YOUR SERVICE NAME
+            name: realestate-web
+            port:
+              number: 80 # This matches the 'port' in your Service YAML
